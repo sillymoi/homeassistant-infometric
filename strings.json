@@ -1,0 +1,20 @@
+{
+  "config": {
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_url": "Invalid URL"
+    },
+    "step": {
+      "user": {
+        "title": "Authentication",
+        "description": "Enter your Infometric Panorama homepage and credentials.",
+        "data": {
+          "url": "[%key:common::config_flow::data::url%]",
+          "username": "[%key:common::config_flow::data::username%]",
+          "password": "[%key:common::config_flow::data::password%]",
+          "name": "[%key:common::config_flow::data::name%]"
+        }
+      }
+    }
+  }
+}

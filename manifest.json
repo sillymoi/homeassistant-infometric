@@ -1,0 +1,10 @@
+{
+  "domain": "infometric",
+  "name": "Infometric Panorama",
+  "config_flow": true,
+  "documentation": "https://www.example.com",
+  "codeowners": ["@sillymoi"],
+  "requirements": [],
+  "iot_class": "cloud_polling",
+  "version": "0.0.1"
+}
