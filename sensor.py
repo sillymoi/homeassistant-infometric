@@ -8,7 +8,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
-#    STATE_CLASS_TOTAL,
+    STATE_CLASS_TOTAL,
     STATE_CLASS_TOTAL_INCREASING,
     SensorEntity,
 )
@@ -37,8 +37,6 @@ from .const import DEFAULT_NAME, DOMAIN
 from .infometric import InfometricClient, InfometricException
 
 _LOGGER = logging.getLogger(__name__)
-
-STATE_CLASS_TOTAL = "total"
 
 DOMAIN_CONFIG = "config"
 
