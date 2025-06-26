@@ -48,7 +48,8 @@ MONTHLY_TYPE = "month"
 YEARLY_TYPE = "year"
 
 GROUP_ENERGY = "energy"
-GROUP_WATER = "water"
+GROUP_HOTWATER = "hotwater"
+GROUP_COLDWATER = "coldwater"
 
 COUNTER_DAILY = "total"
 COUNTER_AVERAGE = "monthly_average"
@@ -102,6 +103,8 @@ async def async_setup_entry(
 
     sensors = []
 
+    #TODO: Don't like this hardcoding of sensors, must be possible to generate this from the data
+
     sensors.append(
         InfometricSensor(
             coordinator, DAILY_NAME, GROUP_ENERGY, DAILY_TYPE, COUNTER_DAILY
@@ -127,14 +130,14 @@ async def async_setup_entry(
     )
     sensors.append(
         InfometricSensor(
-            coordinator, DAILY_NAME, GROUP_WATER, DAILY_TYPE, COUNTER_DAILY
+            coordinator, DAILY_NAME, GROUP_HOTWATER, DAILY_TYPE, COUNTER_DAILY
         )
     )
     sensors.append(
         InfometricSensor(
             coordinator,
             AVERAGE_NAME,
-            GROUP_WATER,
+            GROUP_HOTWATER,
             MONTHLY_TYPE,
             COUNTER_AVERAGE,
         )
@@ -143,7 +146,30 @@ async def async_setup_entry(
         InfometricSensor(
             coordinator,
             PROGNOSIS_NAME,
-            GROUP_WATER,
+            GROUP_HOTWATER,
+            MONTHLY_TYPE,
+            COUNTER_PROGNOSIS,
+        )
+    )
+    sensors.append(
+        InfometricSensor(
+            coordinator, DAILY_NAME, GROUP_COLDWATER, DAILY_TYPE, COUNTER_DAILY
+        )
+    )
+    sensors.append(
+        InfometricSensor(
+            coordinator,
+            AVERAGE_NAME,
+            GROUP_COLDWATER,
+            MONTHLY_TYPE,
+            COUNTER_AVERAGE,
+        )
+    )
+    sensors.append(
+        InfometricSensor(
+            coordinator,
+            PROGNOSIS_NAME,
+            GROUP_COLDWATER,
             MONTHLY_TYPE,
             COUNTER_PROGNOSIS,
         )
@@ -226,12 +252,14 @@ class InfometricData:
     """Stores data retrieved from Panorama."""
 
     energy: DataEntry
-    water: DataEntry
+    hotwater: DataEntry
+    coldwater: DataEntry
 
     @staticmethod
     def from_meters(meters):
         energy = None
-        water = None
+        hotwater = None
+        coldwater = None
 
         for m in meters:
             _LOGGER.debug(f"Updating Infometric meters. Got: {m}")
@@ -247,11 +275,13 @@ class InfometricData:
             if m.name.startswith("El"):
                 energy = entry
             elif m.name.startswith("Varmvatten"):
-                water = entry
+                hotwater = entry
+            elif m.name.startswith("Kallvatten"):
+                coldwater = entry
             else:
                 _LOGGER.warning(f"Infometric sensor with unknown name: {m}")
                 energy = entry
-        return InfometricData(energy=energy, water=water)
+        return InfometricData(energy=energy, hotwater=hotwater, coldwater=coldwater)
 
 
 class InfometricSensor(CoordinatorEntity, SensorEntity):
@@ -270,6 +300,7 @@ class InfometricSensor(CoordinatorEntity, SensorEntity):
         prefix = getattr(entry, "id")
         self._attr_unique_id = f"{prefix}_{self._group}_{self._counter}"
         self._attr_name = f"{name} {self._group}"
+        self._attr_suggested_display_precision = 2
 
         if group == GROUP_ENERGY:
             self._attr_device_class = SensorDeviceClass.ENERGY
