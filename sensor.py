@@ -8,8 +8,8 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
-    STATE_CLASS_TOTAL,
-    STATE_CLASS_TOTAL_INCREASING,
+    SensorStateClass,
+    SensorDeviceClass,
     SensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -18,10 +18,8 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_URL,
     CONF_USERNAME,
-    DEVICE_CLASS_ENERGY,
-    DEVICE_CLASS_GAS,
-    ENERGY_KILO_WATT_HOUR,
-    VOLUME_CUBIC_METERS,
+    UnitOfEnergy,
+    UnitOfVolume,
 )
 from homeassistant.core import DOMAIN, HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -274,16 +272,16 @@ class InfometricSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = f"{name} {self._group}"
 
         if group == GROUP_ENERGY:
-            self._attr_device_class = DEVICE_CLASS_ENERGY
-            self._attr_native_unit_of_measurement = ENERGY_KILO_WATT_HOUR
+            self._attr_device_class = SensorDeviceClass.ENERGY
+            self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         else:
-            self._attr_device_class = DEVICE_CLASS_GAS
-            self._attr_native_unit_of_measurement = VOLUME_CUBIC_METERS
+            self._attr_device_class = SensorDeviceClass.WATER
+            self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
 
         if sensor_type == DAILY_TYPE:
-            self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
+            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         else:
-            self._attr_state_class = STATE_CLASS_TOTAL
+            self._attr_state_class = SensorStateClass.TOTAL
 
     @property
     def native_value(self) -> StateType:
