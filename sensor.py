@@ -103,77 +103,24 @@ async def async_setup_entry(
 
     sensors = []
 
-    #TODO: Don't like this hardcoding of sensors, must be possible to generate this from the data
-
-    sensors.append(
-        InfometricSensor(
-            coordinator, DAILY_NAME, GROUP_ENERGY, DAILY_TYPE, COUNTER_DAILY
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            AVERAGE_NAME,
-            GROUP_ENERGY,
-            MONTHLY_TYPE,
-            COUNTER_AVERAGE,
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            PROGNOSIS_NAME,
-            GROUP_ENERGY,
-            MONTHLY_TYPE,
-            COUNTER_PROGNOSIS,
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator, DAILY_NAME, GROUP_HOTWATER, DAILY_TYPE, COUNTER_DAILY
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            AVERAGE_NAME,
-            GROUP_HOTWATER,
-            MONTHLY_TYPE,
-            COUNTER_AVERAGE,
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            PROGNOSIS_NAME,
-            GROUP_HOTWATER,
-            MONTHLY_TYPE,
-            COUNTER_PROGNOSIS,
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator, DAILY_NAME, GROUP_COLDWATER, DAILY_TYPE, COUNTER_DAILY
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            AVERAGE_NAME,
-            GROUP_COLDWATER,
-            MONTHLY_TYPE,
-            COUNTER_AVERAGE,
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            PROGNOSIS_NAME,
-            GROUP_COLDWATER,
-            MONTHLY_TYPE,
-            COUNTER_PROGNOSIS,
-        )
-    )
+    for group in [GROUP_ENERGY, GROUP_HOTWATER, GROUP_COLDWATER]:
+        data = getattr(coordinator.data, group)
+        if data != None:
+            sensors.append(
+                InfometricSensor(
+                    coordinator, DAILY_NAME, group, DAILY_TYPE, COUNTER_DAILY
+                )
+            )
+            sensors.append(
+                InfometricSensor(
+                    coordinator, AVERAGE_NAME, group, MONTHLY_TYPE, COUNTER_AVERAGE
+                )
+            )
+            sensors.append(
+                InfometricSensor(
+                    coordinator, PROGNOSIS_NAME, group, MONTHLY_TYPE, COUNTER_PROGNOSIS
+                )
+            )
 
     async_add_entities(sensors)
 

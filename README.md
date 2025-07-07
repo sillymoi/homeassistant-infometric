@@ -4,16 +4,15 @@ This custom integration is used to import data from Infometric Panorama Home to 
 
 ## Description
 
-This custom integration is used to import data from Infometric Panorama Home to Home Assistant. It will create 9 entities:
-* Total energy
-* Monthly average energy
-* Montly prognosis energy
-* Total hot water
-* Monthly average hot water
-* Montly prognosis hot water
-* Total cold water
-* Monthly average cold water
-* Montly prognosis cold water
+This custom integration is used to import data from Infometric Panorama Home to Home Assistant. It support 3 type of meters
+* Energy meter
+* Hot water meter
+* Cold water meter
+
+For each meter it will create 3 entites
+* Total
+* Monthly average
+* Monthly prognosis
 
 ## Getting Started
 
@@ -23,11 +22,7 @@ This custom integration is used to import data from Infometric Panorama Home to 
 * Account to access Panorama Home
 
 ### Limitations
-
-* Right now hardcoded for 3 meters
-    * Energy meter
-    * Hot water
-    * Cold water
+You can only have one meter of each type.
 
 ### Installing
 
@@ -66,6 +61,8 @@ The name field is if you want to rename the integration something other than Inf
     * Small adaptations to the Infometric API
     * Uplift to home assistant 2025.5.3
     * Support for hot and cold water
+    * Support of HACS installation
+    * Removal of hardcoded meters
 * 0.0.1
     * Initial Release
 
