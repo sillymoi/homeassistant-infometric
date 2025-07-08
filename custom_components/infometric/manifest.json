@@ -1,11 +1,11 @@
 {
   "domain": "infometric",
   "name": "Infometric Panorama",
+  "codeowners": ["@sillymoi", "@AndersMarkoff"],
   "config_flow": true,
   "documentation": "https://github.com/AndersMarkoff/homeassistant-infometric",
-  "codeowners": ["@sillymoi", "@AndersMarkoff"],
-  "requirements": [],
   "iot_class": "cloud_polling",
-  "version": "0.0.2",
-  "issue_tracker": "https://github.com/AndersMarkoff/homeassistant-infometric/issues"
+  "issue_tracker": "https://github.com/AndersMarkoff/homeassistant-infometric/issues",
+  "requirements": [],
+  "version": "0.0.2"
 }
