@@ -52,7 +52,7 @@ class InfometricClient(object):
                     name=m["Name"],
                     average=m["AverageConsumption"],
                     prognosis=m["PrognosConsumption"],
-                    last_values=[ll(x) for x in m["LastValues"]],
+                    last_values=[ll(x) for x in m["LastOKValues"]],
                 )
                 for m in await resp.json()
             ]

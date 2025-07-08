@@ -7,9 +7,9 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components.sensor import (
-    PLATFORM_SCHEMA,
-    STATE_CLASS_TOTAL,
-    STATE_CLASS_TOTAL_INCREASING,
+    PLATFORM_SCHEMA as SENSOR_PLATFORM_SCHEMA,
+    SensorStateClass,
+    SensorDeviceClass,
     SensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -18,10 +18,8 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_URL,
     CONF_USERNAME,
-    DEVICE_CLASS_ENERGY,
-    DEVICE_CLASS_GAS,
-    ENERGY_KILO_WATT_HOUR,
-    VOLUME_CUBIC_METERS,
+    UnitOfEnergy,
+    UnitOfVolume,
 )
 from homeassistant.core import DOMAIN, HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -50,7 +48,8 @@ MONTHLY_TYPE = "month"
 YEARLY_TYPE = "year"
 
 GROUP_ENERGY = "energy"
-GROUP_WATER = "water"
+GROUP_HOTWATER = "hotwater"
+GROUP_COLDWATER = "coldwater"
 
 COUNTER_DAILY = "total"
 COUNTER_AVERAGE = "monthly_average"
@@ -59,9 +58,9 @@ COUNTER_PROGNOSIS = "monthly_prognosis"
 # CONFIG_SCHEMA = vol.Schema(
 #     {DOMAIN: vol.Schema(CONFIG_SCHEMA_IN, extra=vol.ALLOW_EXTRA)}
 # )
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
     {
-        vol.Required(CONF_URL): cv.url,
+        vol.Required(CONF_URL, default="https://lgh.infometric.se/"): cv.url,
         vol.Required(CONF_USERNAME): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
@@ -104,52 +103,24 @@ async def async_setup_entry(
 
     sensors = []
 
-    sensors.append(
-        InfometricSensor(
-            coordinator, DAILY_NAME, GROUP_ENERGY, DAILY_TYPE, COUNTER_DAILY
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            AVERAGE_NAME,
-            GROUP_ENERGY,
-            MONTHLY_TYPE,
-            COUNTER_AVERAGE,
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            PROGNOSIS_NAME,
-            GROUP_ENERGY,
-            MONTHLY_TYPE,
-            COUNTER_PROGNOSIS,
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator, DAILY_NAME, GROUP_WATER, DAILY_TYPE, COUNTER_DAILY
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            AVERAGE_NAME,
-            GROUP_WATER,
-            MONTHLY_TYPE,
-            COUNTER_AVERAGE,
-        )
-    )
-    sensors.append(
-        InfometricSensor(
-            coordinator,
-            PROGNOSIS_NAME,
-            GROUP_WATER,
-            MONTHLY_TYPE,
-            COUNTER_PROGNOSIS,
-        )
-    )
+    for group in [GROUP_ENERGY, GROUP_HOTWATER, GROUP_COLDWATER]:
+        data = getattr(coordinator.data, group)
+        if data != None:
+            sensors.append(
+                InfometricSensor(
+                    coordinator, DAILY_NAME, group, DAILY_TYPE, COUNTER_DAILY
+                )
+            )
+            sensors.append(
+                InfometricSensor(
+                    coordinator, AVERAGE_NAME, group, MONTHLY_TYPE, COUNTER_AVERAGE
+                )
+            )
+            sensors.append(
+                InfometricSensor(
+                    coordinator, PROGNOSIS_NAME, group, MONTHLY_TYPE, COUNTER_PROGNOSIS
+                )
+            )
 
     async_add_entities(sensors)
 
@@ -228,12 +199,14 @@ class InfometricData:
     """Stores data retrieved from Panorama."""
 
     energy: DataEntry
-    water: DataEntry
+    hotwater: DataEntry
+    coldwater: DataEntry
 
     @staticmethod
     def from_meters(meters):
         energy = None
-        water = None
+        hotwater = None
+        coldwater = None
 
         for m in meters:
             _LOGGER.debug(f"Updating Infometric meters. Got: {m}")
@@ -249,11 +222,13 @@ class InfometricData:
             if m.name.startswith("El"):
                 energy = entry
             elif m.name.startswith("Varmvatten"):
-                water = entry
+                hotwater = entry
+            elif m.name.startswith("Kallvatten"):
+                coldwater = entry
             else:
                 _LOGGER.warning(f"Infometric sensor with unknown name: {m}")
                 energy = entry
-        return InfometricData(energy=energy, water=water)
+        return InfometricData(energy=energy, hotwater=hotwater, coldwater=coldwater)
 
 
 class InfometricSensor(CoordinatorEntity, SensorEntity):
@@ -272,18 +247,19 @@ class InfometricSensor(CoordinatorEntity, SensorEntity):
         prefix = getattr(entry, "id")
         self._attr_unique_id = f"{prefix}_{self._group}_{self._counter}"
         self._attr_name = f"{name} {self._group}"
+        self._attr_suggested_display_precision = 2
 
         if group == GROUP_ENERGY:
-            self._attr_device_class = DEVICE_CLASS_ENERGY
-            self._attr_native_unit_of_measurement = ENERGY_KILO_WATT_HOUR
+            self._attr_device_class = SensorDeviceClass.ENERGY
+            self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         else:
-            self._attr_device_class = DEVICE_CLASS_GAS
-            self._attr_native_unit_of_measurement = VOLUME_CUBIC_METERS
+            self._attr_device_class = SensorDeviceClass.WATER
+            self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
 
         if sensor_type == DAILY_TYPE:
-            self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
+            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         else:
-            self._attr_state_class = STATE_CLASS_TOTAL
+            self._attr_state_class = SensorStateClass.TOTAL
 
     @property
     def native_value(self) -> StateType:

@@ -46,7 +46,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_URL): str,
+                    vol.Required(CONF_URL, default="https://lgh.infometric.se/"): str,
                     vol.Required(CONF_USERNAME): str,
                     vol.Required(CONF_PASSWORD): str,
                     vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
