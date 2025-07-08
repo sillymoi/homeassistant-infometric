@@ -3,9 +3,9 @@
   "name": "Infometric Panorama",
   "codeowners": ["@sillymoi", "@AndersMarkoff"],
   "config_flow": true,
-  "documentation": "https://github.com/AndersMarkoff/homeassistant-infometric",
+  "documentation": "https://github.com/sillymoi/homeassistant-infometric",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/AndersMarkoff/homeassistant-infometric/issues",
+  "issue_tracker": "https://github.com/sillymoi/homeassistant-infometric/issues",
   "requirements": [],
   "version": "0.0.2"
 }

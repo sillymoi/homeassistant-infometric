@@ -70,4 +70,3 @@ The name field is if you want to rename the integration something other than Inf
 ## Acknowledgments
 
 * [README-Template](https://gist.github.com/DomPizzie/7a5ff55ffa9081f2de27c315f5018afc)
-* [Original Infometric integration by @sillymoi](https://github.com/sillymoi/homeassistant-infometric)
