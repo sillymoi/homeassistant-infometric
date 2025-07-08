@@ -6,5 +6,6 @@
   "codeowners": ["@sillymoi", "@AndersMarkoff"],
   "requirements": [],
   "iot_class": "cloud_polling",
-  "version": "0.0.2"
+  "version": "0.0.2",
+  "issue_tracker": "https://github.com/AndersMarkoff/homeassistant-infometric/issues"
 }
