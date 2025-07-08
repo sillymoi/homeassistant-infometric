@@ -7,7 +7,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components.sensor import (
-    PLATFORM_SCHEMA,
+    PLATFORM_SCHEMA as SENSOR_PLATFORM_SCHEMA,
     SensorStateClass,
     SensorDeviceClass,
     SensorEntity,
@@ -58,9 +58,9 @@ COUNTER_PROGNOSIS = "monthly_prognosis"
 # CONFIG_SCHEMA = vol.Schema(
 #     {DOMAIN: vol.Schema(CONFIG_SCHEMA_IN, extra=vol.ALLOW_EXTRA)}
 # )
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
     {
-        vol.Required(CONF_URL): cv.url,
+        vol.Required(CONF_URL, default="https://lgh.infometric.se/"): cv.url,
         vol.Required(CONF_USERNAME): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
