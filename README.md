@@ -35,7 +35,7 @@ Install using HACS:
 
 
 #### Manual installation
-* Copy all files to homeassistant/custom_components/homeassistant-infometric
+* Copy all files to homeassistant/custom_components/infometric
 * Restart Home Assistant
 
 ### Initial setup
