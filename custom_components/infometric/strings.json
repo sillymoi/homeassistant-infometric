@@ -2,7 +2,10 @@
   "config": {
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
-      "invalid_url": "Invalid URL"
+      "invalid_url": "Invalid URL",
+      "auth_failed": "Authentication failed",
+      "already_configured": "Entry already configured",
+      "unexpected_response": "Unexpected response from server"
     },
     "step": {
       "user": {

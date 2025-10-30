@@ -9,7 +9,7 @@ This custom integration is used to import data from Infometric Panorama Home to 
 * Hot water meter
 * Cold water meter
 
-For each meter it will create 3 entites
+For each meter it will create 3 entities
 * Total
 * Monthly average
 * Monthly prognosis
@@ -18,7 +18,7 @@ For each meter it will create 3 entites
 
 ### Dependencies
 
-* Smart meters installed in your appartment connected to Infometric
+* Smart meters installed in your apartment connected to Infometric
 * Account to access Panorama Home
 
 ### Limitations
@@ -57,6 +57,14 @@ The name field is if you want to rename the integration something other than Inf
 
 ## Version History
 
+* 0.0.3
+    * Hardened authentication and session reuse
+    * Stable unique IDs (UnitId-based) and device grouping
+    * Config flow improvements (duplicate prevention, clearer errors)
+    * More robust parsing & error handling
+    * Adjusted sensor state classes (average/prognosis as measurements)
+    * Added new translation keys
+    * Added constants (`DEFAULT_URL`, `PLATFORMS`)
 * 0.0.2
     * Small adaptations to the Infometric API
     * Uplift to home assistant 2025.5.3

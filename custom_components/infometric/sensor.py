@@ -1,4 +1,5 @@
-"""Infometric"""
+"""Infometric sensors and coordinator."""
+from __future__ import annotations
 from dataclasses import dataclass
 import logging
 from datetime import timedelta
@@ -21,7 +22,7 @@ from homeassistant.const import (
     UnitOfEnergy,
     UnitOfVolume,
 )
-from homeassistant.core import DOMAIN, HomeAssistant
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, StateType
 from homeassistant.helpers.update_coordinator import (
@@ -160,12 +161,16 @@ async def get_coordinator(
             # Note: asyncio.TimeoutError and aiohttp.ClientError are already
             # handled by the data update coordinator.
             async with async_timeout.timeout(60):
-                client = InfometricClient(
-                    url,
-                    username,
-                    password,
-                )
-                await client.authenticate(async_get_clientsession(hass))
+                # Reuse existing client if available for session persistence
+                store = hass.data[DOMAIN].setdefault("client_store", {})
+                client: InfometricClient | None = store.get(id)
+                if client is None:
+                    client = InfometricClient(url, username, password)
+                    store[id] = client
+                    await client.authenticate(async_get_clientsession(hass))
+                elif not client._authenticated:
+                    await client.authenticate(async_get_clientsession(hass))
+
                 meters = await client.get_meters()
                 return InfometricData.from_meters(meters)
 
@@ -196,29 +201,41 @@ class DataEntry:
 
 @dataclass
 class InfometricData:
-    """Stores data retrieved from Panorama."""
+    """Stores data retrieved from Panorama.
 
-    energy: DataEntry
-    hotwater: DataEntry
-    coldwater: DataEntry
+    Some meter types may be absent; fields can be None.
+    """
+
+    energy: DataEntry | None
+    hotwater: DataEntry | None
+    coldwater: DataEntry | None
 
     @staticmethod
     def from_meters(meters):
-        energy = None
-        hotwater = None
-        coldwater = None
+        energy: DataEntry | None = None
+        hotwater: DataEntry | None = None
+        coldwater: DataEntry | None = None
 
         for m in meters:
-            _LOGGER.debug(f"Updating Infometric meters. Got: {m}")
+            _LOGGER.debug("Updating Infometric meters. Got meter id=%s name=%s", m.id, m.name)
 
-            id = f"{m.id}-{m.name}"
-            prognosis = m.prognosis
-            average = m.average
-            daily = float(m.last_values[0]["value"])
-            if not len(m.last_values) == 1:
-                _LOGGER.warning(f"Infometric sensor with multiple series: {m}")
+            # Unique ID derived from UnitId only for stability
+            unique_id = str(m.id)
 
-            entry = DataEntry(id, daily, prognosis, average)
+            prognosis = float(m.prognosis)
+            average = float(m.average)
+            # Pick first value if available, else 0.0
+            daily = 0.0
+            if m.last_values:
+                try:
+                    daily_raw = m.last_values[0].get("value")
+                    daily = float(daily_raw) if daily_raw not in (None, "") else 0.0
+                except (ValueError, TypeError):
+                    _LOGGER.warning("Invalid daily value for meter %s", m.id)
+            if len(m.last_values) > 1:
+                _LOGGER.debug("Meter %s has multiple series values; using first.", m.id)
+
+            entry = DataEntry(unique_id, daily, prognosis, average)
             if m.name.startswith("El"):
                 energy = entry
             elif m.name.startswith("Varmvatten"):
@@ -226,15 +243,14 @@ class InfometricData:
             elif m.name.startswith("Kallvatten"):
                 coldwater = entry
             else:
-                _LOGGER.warning(f"Infometric sensor with unknown name: {m}")
-                energy = entry
+                _LOGGER.warning("Infometric sensor with unknown name pattern: %s", m.name)
         return InfometricData(energy=energy, hotwater=hotwater, coldwater=coldwater)
 
 
 class InfometricSensor(CoordinatorEntity, SensorEntity):
     """Representation of a sensor entity for Infometric."""
 
-    def __init__(self, coordinator, name, group, sensor_type, counter):
+    def __init__(self, coordinator, name: str, group: str, sensor_type: str, counter: str):
         """Pass coordinator to CoordinatorEntity."""
         super().__init__(coordinator)
 
@@ -243,26 +259,54 @@ class InfometricSensor(CoordinatorEntity, SensorEntity):
         self._sensor_type = sensor_type
         self._counter = counter
 
-        entry = getattr(self.coordinator.data, self._group)
-        prefix = getattr(entry, "id")
+        entry = getattr(self.coordinator.data, self._group, None)
+        prefix = getattr(entry, "id", f"{group}_unknown")
         self._attr_unique_id = f"{prefix}_{self._group}_{self._counter}"
         self._attr_name = f"{name} {self._group}"
         self._attr_suggested_display_precision = 2
 
-        if group == GROUP_ENERGY:
-            self._attr_device_class = SensorDeviceClass.ENERGY
-            self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-        else:
-            self._attr_device_class = SensorDeviceClass.WATER
-            self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
-
+        # Set device class and state class based on sensor type
         if sensor_type == DAILY_TYPE:
-            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
-        else:
+            # Daily cumulative total - use device class + total state
+            if group == GROUP_ENERGY:
+                self._attr_device_class = SensorDeviceClass.ENERGY
+                self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+            else:
+                self._attr_device_class = SensorDeviceClass.WATER
+                self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
             self._attr_state_class = SensorStateClass.TOTAL
+        else:
+            # Monthly average / prognosis - don't use device class (conflicts with measurement state)
+            # Just set units without device class
+            if group == GROUP_ENERGY:
+                self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+            else:
+                self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
+            self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def native_value(self) -> StateType:
         """Update device state."""
-        entry = getattr(self.coordinator.data, self._group)
-        return getattr(entry, self._counter)
+        data = getattr(self.coordinator, "data", None)
+        if data is None:
+            return None
+        entry = getattr(data, self._group, None)
+        if entry is None:
+            return None
+        return getattr(entry, self._counter, None)
+
+    @property
+    def device_info(self):  # type: ignore[override]
+        """Return device information for grouping sensors."""
+        # Use energy meter id if available as base; fallback to domain
+        base_id = None
+        data = getattr(self.coordinator, "data", None)
+        if data and getattr(data, "energy", None):
+            base_id = getattr(data.energy, "id", None)
+        if not base_id:
+            base_id = "infometric"
+        return {
+            "identifiers": {(DOMAIN, base_id)},
+            "manufacturer": "Infometric AB",
+            "name": "Infometric Panorama",
+        }
