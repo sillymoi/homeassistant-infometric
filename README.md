@@ -52,11 +52,13 @@ The name field is if you want to rename the integration something other than Inf
 ## Authors
 
 * The main development of this integration is made by @sillymoi in 2021 (https://github.com/sillymoi/homeassistant-infometric)
-* Small updates were done by @AndersMarkoff in 2025 (https://github.com/AndersMarkoff/homeassistant-infometric)
+* Small updates were done by @AndersMarkoff in 2025
+* Hardening and stability improvments by @spiddeer in 2025
 
 
 ## Version History
-
+* 0.0.4
+    * Diagnostics support
 * 0.0.3
     * Hardened authentication and session reuse
     * Stable unique IDs (UnitId-based) and device grouping
